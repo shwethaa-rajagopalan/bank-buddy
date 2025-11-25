@@ -1,0 +1,11 @@
+customer_id,first_name,last_name,age,gender,marital_status,credit_score
+1001,Aisha,Khan,35,Female,Married,780
+1002,Kenji,Tanaka,52,Male,Married,810
+1003,Maria,Silva,22,Female,Single,620
+1004,Liam,O'Connell,48,Male,Divorced,730
+1005,Sofia,Garcia,67,Female,Widowed,680
+1006,Darnell,Jackson,29,Male,Single,750
+1007,Priya,Sharma,41,Female,Married,800
+1008,Zoltan,Nagy,33,Male,Single,650
+1009,Chen,Wei,75,Female,Married,700
+1010,Javier,Ramos,19,Male,Single,590
