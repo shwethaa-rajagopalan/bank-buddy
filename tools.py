@@ -10,9 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_FILE_NAME = os.getenv("DB_FILE_NAME")
-CSV_FILE_PATH = os.getenv("CSV_FILE_PATH")
-CUSTOMER_TABLE = os.getenv("CUSTOMER_TABLE")
+DB_FILE_NAME = 'customer_data.db'
 
 
 def getLoanMetadata():
@@ -25,28 +23,6 @@ def getLoanMetadata():
     page = reader.pages[0]
     return page.extract_text()
 
-def load_csv_to_sqlite_file(callback_context: CallbackContext):
-    """
-    Loads data from a CSV file into a persistent SQLite database file.
-    Returns the database connection object.
-    """
-       
-    if not (CSV_FILE_PATH):
-        return None
-
-    try:
-        df = pd.read_csv(CSV_FILE_PATH)
-    except Exception as e:
-        return None
-
-    try:
-        conn = sqlite3.connect(DB_FILE_NAME)
-    except Exception as e:
-        return None
-    
-    df.to_sql(CUSTOMER_TABLE, conn, if_exists='replace', index=False)
-    
-    conn.close()
 
 def getCustomerData(customer_id):
     """
@@ -57,7 +33,7 @@ def getCustomerData(customer_id):
         A dictionary containing customer demographic data.
     """
     conn_read = sqlite3.connect(DB_FILE_NAME)
-    query = f"SELECT * FROM {CUSTOMER_TABLE} WHERE CUSTOMER_ID = {customer_id};"
+    query = f"SELECT * FROM customer WHERE CUSTOMER_ID = {customer_id};"
     result_df = pd.read_sql_query(query, conn_read)
     conn_read.close()
     return result_df.iloc[0].to_dict()
@@ -73,3 +49,43 @@ def setCustomerContext(customer_id: str) -> dict:
     
     return getCustomerData(customer_id)
 
+def getLoanApplication(customer_id: int, application_id: int ) -> pd.DataFrame:
+    
+    conn_read = sqlite3.connect(DB_FILE_NAME)
+    query = f"SELECT * FROM loan_applications WHERE APPLICATION_ID = {application_id} AND CUSTOMER_ID = {customer_id};"
+    result_df = pd.read_sql_query(query, conn_read)
+    conn_read.close()
+    return result_df.to_dict()
+
+def getAllLoanApplications(customer_id: int) -> pd.DataFrame:
+    
+    conn_read = sqlite3.connect(DB_FILE_NAME)
+    query = f"SELECT * FROM loan_applications WHERE CUSTOMER_ID = {customer_id};"
+    result_df = pd.read_sql_query(query, conn_read)
+    conn_read.close()
+    return result_df.to_dict()
+
+def saveLoanApplication(application_data: dict) -> int:
+    """
+    Saves a new loan application to the database.
+    Args:
+        application_data: A dictionary containing application details.  {customer_id, loan_type, loan_amount, identification}
+    Returns:
+        The saved application's ID, or -1 if failed.
+    """
+    try:
+        conn = sqlite3.connect(DB_FILE_NAME)
+        cursor = conn.cursor()
+
+        columns = ', '.join(application_data.keys())
+        placeholders = ', '.join(['?'] * len(application_data))
+        values = tuple(application_data.values())
+
+        insert_query = f"INSERT INTO loan_applications ({columns}) VALUES ({placeholders})"
+        cursor.execute(insert_query, values)
+        application_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return application_id
+    except Exception as e:
+        return -1
